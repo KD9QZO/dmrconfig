@@ -31,8 +31,10 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <sys/stat.h>
+
 #include "radio.h"
 #include "util.h"
+
 
 #define NCHAN           1000
 #define NCONTACTS       1000
@@ -45,139 +47,141 @@
 #define OFFSET_TIMESTMP 0x02001
 #define OFFSET_SETTINGS 0x02040
 #define OFFSET_MSG      0x02180
-#define OFFSET_CONTACTS 0x05f80
-#define OFFSET_GLISTS   0x0ec20
-#define OFFSET_ZONES    0x149e0
+#define OFFSET_CONTACTS 0x05F80
+#define OFFSET_GLISTS   0x0EC20
+#define OFFSET_ZONES    0x149E0
 #define OFFSET_SCANL    0x18860
-#define OFFSET_CHANNELS 0x1ee00
+#define OFFSET_CHANNELS 0x1EE00
 
 #define GET_TIMESTAMP()     (&radio_mem[OFFSET_TIMESTMP])
-#define GET_SETTINGS()      ((general_settings_t*) &radio_mem[OFFSET_SETTINGS])
-#define GET_CHANNEL(i)      ((channel_t*) &radio_mem[OFFSET_CHANNELS + (i)*64])
-#define GET_ZONE(i)         ((zone_t*) &radio_mem[OFFSET_ZONES + (i)*64])
-#define GET_ZONEXT(i)       ((zone_ext_t*) &radio_mem[OFFSET_ZONEXT + (i)*224])
-#define GET_SCANLIST(i)     ((scanlist_t*) &radio_mem[OFFSET_SCANL + (i)*104])
-#define GET_CONTACT(i)      ((contact_t*) &radio_mem[OFFSET_CONTACTS + (i)*36])
-#define GET_GROUPLIST(i)    ((grouplist_t*) &radio_mem[OFFSET_GLISTS + (i)*96])
-#define GET_MESSAGE(i)      ((uint16_t*) &radio_mem[OFFSET_MSG + (i)*288])
+#define GET_SETTINGS()      ((general_settings_t*)&radio_mem[OFFSET_SETTINGS])
+#define GET_CHANNEL(i)      ((channel_t*)&radio_mem[OFFSET_CHANNELS + (i) * 64])
+#define GET_ZONE(i)         ((zone_t*)&radio_mem[OFFSET_ZONES + (i) * 64])
+#define GET_ZONEXT(i)       ((zone_ext_t*)&radio_mem[OFFSET_ZONEXT + (i) * 224])
+#define GET_SCANLIST(i)     ((scanlist_t*)&radio_mem[OFFSET_SCANL + (i) * 104])
+#define GET_CONTACT(i)      ((contact_t*)&radio_mem[OFFSET_CONTACTS + (i) * 36])
+#define GET_GROUPLIST(i)    ((grouplist_t*)&radio_mem[OFFSET_GLISTS + (i) * 96])
+#define GET_MESSAGE(i)      ((uint16_t*)&radio_mem[OFFSET_MSG + (i) * 288])
 
-#define VALID_TEXT(txt)     (*(txt) != 0 && *(txt) != 0xffff)
+#define VALID_TEXT(txt)     (*(txt) != 0 && *(txt) != 0xFFFF)
 #define VALID_CHANNEL(ch)   VALID_TEXT((ch)->name)
 #define VALID_ZONE(z)       VALID_TEXT((z)->name)
 #define VALID_SCANLIST(sl)  VALID_TEXT((sl)->name)
 #define VALID_GROUPLIST(gl) VALID_TEXT((gl)->name)
 #define VALID_CONTACT(ct)   ((ct)->type != 0 && VALID_TEXT((ct)->name))
 
+
+
 //
 // Channel data.
 //
 typedef struct {
-    // Byte 0
-    uint8_t channel_mode        : 2,    // Mode: Analog or Digital
+	// Byte 0
+	uint8_t channel_mode:2,    // Mode: Analog or Digital
 #define MODE_ANALOG     1
 #define MODE_DIGITAL    2
 
-            bandwidth           : 2,    // Bandwidth: 12.5 or 20 or 25 kHz
+			bandwidth:2,    // Bandwidth: 12.5 or 20 or 25 kHz
 #define BW_12_5_KHZ     0
 #define BW_20_KHZ       1
 #define BW_25_KHZ       2
 
-            autoscan            : 1,    // Autoscan Enable
-            squelch             : 1,    // Squelch
+			autoscan:1,    // Autoscan Enable
+			squelch:1,    // Squelch
 #define SQ_TIGHT        0
 #define SQ_NORMAL       1
 
-            _unused1            : 1,    // 1
-            lone_worker         : 1;    // Lone Worker
+			_unused1:1,    // 1
+			lone_worker:1;    // Lone Worker
 
-    // Byte 1
-    uint8_t talkaround          : 1,    // Allow Talkaround
-            rx_only             : 1,    // RX Only Enable
-            repeater_slot       : 2,    // Repeater Slot: 1 or 2
-            colorcode           : 4;    // Color Code: 0...15
+	// Byte 1
+	uint8_t talkaround          : 1,    // Allow Talkaround
+			rx_only             : 1,    // RX Only Enable
+			repeater_slot       : 2,    // Repeater Slot: 1 or 2
+			colorcode           : 4;    // Color Code: 0...15
 
-    // Byte 2
-    uint8_t privacy_no          : 4,    // Privacy No. (+1): 1...16
-            privacy             : 2,    // Privacy: None, Basic or Enhanced
+	// Byte 2
+	uint8_t privacy_no          : 4,    // Privacy No. (+1): 1...16
+			privacy             : 2,    // Privacy: None, Basic or Enhanced
 #define PRIV_NONE       0
 #define PRIV_BASIC      1
 #define PRIV_ENHANCED   2
 
-            private_call_conf   : 1,    // Private Call Confirmed
-            data_call_conf      : 1;    // Data Call Confirmed
+			private_call_conf   : 1,    // Private Call Confirmed
+			data_call_conf      : 1;    // Data Call Confirmed
 
-    // Byte 3
-    uint8_t rx_ref_frequency    : 2,    // RX Ref Frequency: Low, Medium or High
+	// Byte 3
+	uint8_t rx_ref_frequency    : 2,    // RX Ref Frequency: Low, Medium or High
 #define REF_LOW         0
 #define REF_MEDIUM      1
 #define REF_HIGH        2
 
-            _unused2            : 1,    // 0
-            emergency_alarm_ack : 1,    // Emergency Alarm Ack
-            _unused3            : 2,    // 0b10
-            uncompressed_udp    : 1,    // Compressed UDP Data header (0) Enable, (1) Disable
-            display_pttid_dis   : 1;    // Display PTT ID (inverted)
+			_unused2            : 1,    // 0
+			emergency_alarm_ack : 1,    // Emergency Alarm Ack
+			_unused3            : 2,    // 0b10
+			uncompressed_udp    : 1,    // Compressed UDP Data header (0) Enable, (1) Disable
+			display_pttid_dis   : 1;    // Display PTT ID (inverted)
 
-    // Byte 4
-    uint8_t tx_ref_frequency    : 2,    // RX Ref Frequency: Low, Medium or High
-            _unused4            : 2,    // 0b01
-            vox                 : 1,    // VOX Enable
-            power               : 1,    // Power: Low, High
+	// Byte 4
+	uint8_t tx_ref_frequency    : 2,    // RX Ref Frequency: Low, Medium or High
+			_unused4            : 2,    // 0b01
+			vox                 : 1,    // VOX Enable
+			power               : 1,    // Power: Low, High
 #define POWER_HIGH      1
 #define POWER_LOW       0
 
-            admit_criteria      : 2;    // Admit Criteria: Always, Channel Free or Correct CTS/DCS
+			admit_criteria      : 2;    // Admit Criteria: Always, Channel Free or Correct CTS/DCS
 #define ADMIT_ALWAYS    0
 #define ADMIT_CH_FREE   1
 #define ADMIT_TONE      2
 #define ADMIT_COLOR     3
 
-    // Byte 5
-    uint8_t _unused5            : 4,    // 0
-            in_call_criteria    : 2,    // In Call Criteria: Always, Follow Admit Criteria or TX Interrupt
+	// Byte 5
+	uint8_t _unused5            : 4,    // 0
+			in_call_criteria    : 2,    // In Call Criteria: Always, Follow Admit Criteria or TX Interrupt
 #define INCALL_ALWAYS   0
 #define INCALL_ADMIT    1
 
-            _unused6            : 2;    // 0b11
+			_unused6            : 2;    // 0b11
 
-    // Bytes 6-7
-    uint16_t contact_name_index;        // Contact Name: Contact1...
+	// Bytes 6-7
+	uint16_t contact_name_index;        // Contact Name: Contact1...
 
-    // Bytes 8-9
-    uint8_t tot                 : 6,    // TOT x 15sec: 0-Infinite, 1=15s... 37=555s
-            _unused13           : 2;    // 0
-    uint8_t tot_rekey_delay;            // TOT Rekey Delay: 0s...255s
+	// Bytes 8-9
+	uint8_t tot                 : 6,    // TOT x 15sec: 0-Infinite, 1=15s... 37=555s
+			_unused13           : 2;    // 0
+	uint8_t tot_rekey_delay;            // TOT Rekey Delay: 0s...255s
 
-    // Bytes 10-11
-    uint8_t emergency_system_index;     // Emergency System: None, System1...32
-    uint8_t scan_list_index;            // Scan List: None, ScanList1...250
+	// Bytes 10-11
+	uint8_t emergency_system_index;     // Emergency System: None, System1...32
+	uint8_t scan_list_index;            // Scan List: None, ScanList1...250
 
-    // Bytes 12-13
-    uint8_t group_list_index;           // Group List: None, GroupList1...250
-    uint8_t _unused7;                   // 0
+	// Bytes 12-13
+	uint8_t group_list_index;           // Group List: None, GroupList1...250
+	uint8_t _unused7;                   // 0
 
-    // Bytes 14-15
-    uint8_t _unused8;                   // 0
-    uint8_t _unused9;                   // 0xff
+	// Bytes 14-15
+	uint8_t _unused8;                   // 0
+	uint8_t _unused9;                   // 0xff
 
-    // Bytes 16-23
-    uint32_t rx_frequency;              // RX Frequency: 8 digits BCD
-    uint32_t tx_frequency;              // TX Frequency: 8 digits BCD
+	// Bytes 16-23
+	uint32_t rx_frequency;              // RX Frequency: 8 digits BCD
+	uint32_t tx_frequency;              // TX Frequency: 8 digits BCD
 
-    // Bytes 24-27
-    uint16_t ctcss_dcs_receive;         // CTCSS/DCS Dec: 4 digits BCD
-    uint16_t ctcss_dcs_transmit;        // CTCSS/DCS Enc: 4 digits BCD
+	// Bytes 24-27
+	uint16_t ctcss_dcs_receive;         // CTCSS/DCS Dec: 4 digits BCD
+	uint16_t ctcss_dcs_transmit;        // CTCSS/DCS Enc: 4 digits BCD
 
-    // Bytes 28-29
-    uint8_t rx_signaling_syst;          // Rx Signaling System: Off, DTMF-1...4
-    uint8_t tx_signaling_syst;          // Tx Signaling System: Off, DTMF-1...4
+	// Bytes 28-29
+	uint8_t rx_signaling_syst;          // Rx Signaling System: Off, DTMF-1...4
+	uint8_t tx_signaling_syst;          // Tx Signaling System: Off, DTMF-1...4
 
-    // Bytes 30-31
-    uint8_t _unused10;                  // 0xff
-    uint8_t _unused11;                  // 0xff
+	// Bytes 30-31
+	uint8_t _unused10;                  // 0xff
+	uint8_t _unused11;                  // 0xff
 
-    // Bytes 32-63
-    uint16_t name[16];                  // Channel Name (Unicode)
+	// Bytes 32-63
+	uint16_t name[16];                  // Channel Name (Unicode)
 } channel_t;
 
 //
@@ -250,7 +254,6 @@ typedef struct {
 // TODO: verify the general settings with official CPS
 //
 typedef struct {
-
     // Bytes 0-19
     uint16_t intro_line1[10];
 
@@ -325,63 +328,109 @@ typedef struct {
     uint16_t radio_name[16];
 } general_settings_t;
 
-static const char *POWER_NAME[] = { "Low", "High" };
-static const char *SQUELCH_NAME[] = { "Tight", "Normal" };
-static const char *BANDWIDTH[] = { "12.5", "20", "25", "25" };
-static const char *CONTACT_TYPE[] = { "-", "Group", "Private", "All" };
-static const char *ADMIT_NAME[] = { "-", "Free", "Tone", "Color" };
+
+
+static const char *POWER_NAME[] = {
+	"Low",
+	"High"
+};
+
+static const char *SQUELCH_NAME[] = {
+	"Tight",
+	"Normal"
+};
+
+static const char *BANDWIDTH[] = {
+	"12.5",
+	"20",
+	"25",
+	"25"
+};
+
+static const char *CONTACT_TYPE[] = {
+	"-",
+	"Group",
+	"Private",
+	"All"
+};
+
+static const char *ADMIT_NAME[] = {
+	"-",
+	"Free",
+	"Tone",
+	"Color"
+};
 
 #ifdef PRINT_RARE_PARAMS
-static const char *INCALL_NAME[] = { "-", "Admit", "-", "Admit" };
-static const char *REF_FREQUENCY[] = { "Low", "Med", "High" };
-static const char *PRIVACY_NAME[] = { "-", "Basic", "Enhanced" };
-static const char *SIGNALING_SYSTEM[] = { "-", "DTMF-1", "DTMF-2", "DTMF-3", "DTMF-4" };
+static const char *INCALL_NAME[] = {
+	"-",
+	"Admit",
+	"-",
+	"Admit"
+};
+
+static const char *REF_FREQUENCY[] = {
+	"Low",
+	"Med",
+	"High"
+};
+
+static const char *PRIVACY_NAME[] = {
+	"-",
+	"Basic",
+	"Enhanced"
+};
+
+static const char *SIGNALING_SYSTEM[] = {
+	"-",
+	"DTMF-1",
+	"DTMF-2",
+	"DTMF-3",
+	"DTMF-4"
+};
 #endif
 
 //
 // Print a generic information about the device.
 //
-static void md380_print_version(radio_device_t *radio, FILE *out)
-{
-    unsigned char *timestamp = GET_TIMESTAMP();
-    static const char charmap[16] = "0123456789:;<=>?";
+static void md380_print_version(radio_device_t *radio, FILE *out) {
+	unsigned char *timestamp = GET_TIMESTAMP();
+	static const char charmap[16] = "0123456789:;<=>?";
 
-    if (*timestamp != 0xff) {
-        fprintf(out, "Last Programmed Date: %d%d%d%d-%d%d-%d%d",
-            timestamp[0] >> 4, timestamp[0] & 15, timestamp[1] >> 4, timestamp[1] & 15,
-            timestamp[2] >> 4, timestamp[2] & 15, timestamp[3] >> 4, timestamp[3] & 15);
-        fprintf(out, " %d%d:%d%d:%d%d\n",
-            timestamp[4] >> 4, timestamp[4] & 15, timestamp[5] >> 4, timestamp[5] & 15,
-            timestamp[6] >> 4, timestamp[6] & 15);
-        fprintf(out, "CPS Software Version: V%c%c.%c%c\n",
-            charmap[timestamp[7] & 15], charmap[timestamp[8] & 15],
-            charmap[timestamp[9] & 15], charmap[timestamp[10] & 15]);
-    }
+	if (*timestamp != 0xff) {
+		fprintf(out, "Last Programmed Date: %d%d%d%d-%d%d-%d%d",
+				timestamp[0] >> 4, timestamp[0] & 15, timestamp[1] >> 4, timestamp[1] & 15,
+				timestamp[2] >> 4, timestamp[2] & 15, timestamp[3] >> 4, timestamp[3] & 15);
+		fprintf(out, " %d%d:%d%d:%d%d\n",
+				timestamp[4] >> 4, timestamp[4] & 15, timestamp[5] >> 4, timestamp[5] & 15,
+				timestamp[6] >> 4, timestamp[6] & 15);
+		fprintf(out, "CPS Software Version: V%c%c.%c%c\n",
+				charmap[timestamp[7] & 15], charmap[timestamp[8] & 15],
+				charmap[timestamp[9] & 15], charmap[timestamp[10] & 15]);
+	}
 }
 
 //
 // Read memory image from the device.
 //
-static void md380_download(radio_device_t *radio)
-{
-    int bno;
+static void md380_download(radio_device_t *radio) {
+	int bno;
 
-    for (bno=0; bno<MEMSZ/1024; bno++) {
-        dfu_read_block(bno, &radio_mem[bno*1024], 1024);
+	for (bno=0; bno < MEMSZ / 1024; bno++) {
+		dfu_read_block(bno, &radio_mem[bno * 1024], 1024);
 
-        ++radio_progress;
-        if (radio_progress % 32 == 0) {
-            fprintf(stderr, "#");
-            fflush(stderr);
-        }
-    }
+		++radio_progress;
+		if (radio_progress % 32 == 0) {
+			fprintf(stderr, "#");
+			fflush(stderr);
+		}
+	}
 }
 
 //
 // Write memory image to the device.
 //
-static void md380_upload(radio_device_t *radio, int cont_flag)
-{
+static void md380_upload(radio_device_t *radio, int cont_flag) {
     int bno;
 
     dfu_erase(0, MEMSZ);
@@ -400,39 +449,38 @@ static void md380_upload(radio_device_t *radio, int cont_flag)
 //
 // Check whether the memory image is compatible with this device.
 //
-static int md380_is_compatible(radio_device_t *radio)
-{
-    return 1;
+static int md380_is_compatible(radio_device_t *radio) {
+	return 1;
 }
 
 //
 // Set name for a given zone.
 //
-static void setup_zone(int index, const char *name)
-{
-    zone_t *z = GET_ZONE(index);
+static void setup_zone(int index, const char *name) {
+	zone_t *z = GET_ZONE(index);
 
-    utf8_decode(z->name, name, 16);
+	utf8_decode(z->name, name, 16);
 }
 
 //
 // Add channel to a zone.
 // Return 0 on failure.
 //
-static int zone_append(int index, int cnum)
-{
-    zone_t *z = GET_ZONE(index);
-    int i;
+static int zone_append(int index, int cnum) {
+	zone_t *z = GET_ZONE(index);
+	int i;
 
-    for (i=0; i<16; i++) {
-        if (z->member[i] == cnum)
-            return 1;
-        if (z->member[i] == 0) {
-            z->member[i] = cnum;
-            return 1;
-        }
-    }
-    return 0;
+	for (i=0; i<16; i++) {
+		if (z->member[i] == cnum)
+			return 1;
+
+		if (z->member[i] == 0) {
+			z->member[i] = cnum;
+			return 1;
+		}
+	}
+
+	return 0;
 }
 
 static void erase_zone(int index)
@@ -445,22 +493,19 @@ static void erase_zone(int index)
 //
 // Set parameters for a given scan list.
 //
-static void setup_scanlist(int index, const char *name,
-    int prio1, int prio2, int txchan)
-{
-    scanlist_t *sl = GET_SCANLIST(index);
+static void setup_scanlist(int index, const char *name, int prio1, int prio2, int txchan) {
+	scanlist_t *sl = GET_SCANLIST(index);
 
-    // Bytes 0-31
-    utf8_decode(sl->name, name, 16);
+	// Bytes 0-31
+	utf8_decode(sl->name, name, 16);
 
-    // Bytes 32-37
-    sl->priority_ch1     = prio1;
-    sl->priority_ch2     = prio2;
-    sl->tx_designated_ch = txchan;
+	// Bytes 32-37
+	sl->priority_ch1     = prio1;
+	sl->priority_ch2     = prio2;
+	sl->tx_designated_ch = txchan;
 }
 
-static void erase_scanlist(int index)
-{
+static void erase_scanlist(int index) {
     scanlist_t *sl = GET_SCANLIST(index);
 
     memset(sl, 0, 104);
@@ -2002,8 +2047,7 @@ static int parse_grouplist(int first_row, char *line)
 // Parse one line of Messages table.
 // Return 0 on failure.
 //
-static int parse_messages(int first_row, char *line)
-{
+static int parse_messages(int first_row, char *line) {
     char *text;
     int mnum;
 
@@ -2234,99 +2278,101 @@ static int md380_verify_config(radio_device_t *radio)
     return 1;
 }
 
+
 //
 // TYT MD-380
 //
 radio_device_t radio_md380 = {
-    "TYT MD-380",
-    md380_download,
-    md380_upload,
-    md380_is_compatible,
-    md380_read_image,
-    md380_save_image,
-    md380_print_version,
-    md380_print_config,
-    md380_verify_config,
-    md380_parse_parameter,
-    md380_parse_header,
-    md380_parse_row,
-    md380_update_timestamp,
-    //TODO: md380_write_csv,
+	"TYT MD-380",
+	md380_download,
+	md380_upload,
+	md380_is_compatible,
+	md380_read_image,
+	md380_save_image,
+	md380_print_version,
+	md380_print_config,
+	md380_verify_config,
+	md380_parse_parameter,
+	md380_parse_header,
+	md380_parse_row,
+	md380_update_timestamp,
+	//TODO: md380_write_csv,
 };
 
 //
 // TYT MD-390
 //
 radio_device_t radio_md390 = {
-    "TYT MD-390",
-    md380_download,
-    md380_upload,
-    md380_is_compatible,
-    md380_read_image,
-    md380_save_image,
-    md380_print_version,
-    md380_print_config,
-    md380_verify_config,
-    md380_parse_parameter,
-    md380_parse_header,
-    md380_parse_row,
-    md380_update_timestamp,
-    //TODO: md380_write_csv,
+	"TYT MD-390",
+	md380_download,
+	md380_upload,
+	md380_is_compatible,
+	md380_read_image,
+	md380_save_image,
+	md380_print_version,
+	md380_print_config,
+	md380_verify_config,
+	md380_parse_parameter,
+	md380_parse_header,
+	md380_parse_row,
+	md380_update_timestamp,
+	//TODO: md380_write_csv,
 };
 
 //
 // Zastone D900
 //
 radio_device_t radio_d900 = {
-    "Zastone D900",
-    md380_download,
-    md380_upload,
-    md380_is_compatible,
-    md380_read_image,
-    md380_save_image,
-    md380_print_version,
-    md380_print_config,
-    md380_verify_config,
-    md380_parse_parameter,
-    md380_parse_header,
-    md380_parse_row,
-    md380_update_timestamp,
+	"Zastone D900",
+	md380_download,
+	md380_upload,
+	md380_is_compatible,
+	md380_read_image,
+	md380_save_image,
+	md380_print_version,
+	md380_print_config,
+	md380_verify_config,
+	md380_parse_parameter,
+	md380_parse_header,
+	md380_parse_row,
+	md380_update_timestamp,
 };
 
 //
 // Zastone DP880
 //
 radio_device_t radio_dp880 = {
-    "Zastone DP880",
-    md380_download,
-    md380_upload,
-    md380_is_compatible,
-    md380_read_image,
-    md380_save_image,
-    md380_print_version,
-    md380_print_config,
-    md380_verify_config,
-    md380_parse_parameter,
-    md380_parse_header,
-    md380_parse_row,
-    md380_update_timestamp,
+	"Zastone DP880",
+	md380_download,
+	md380_upload,
+	md380_is_compatible,
+	md380_read_image,
+	md380_save_image,
+	md380_print_version,
+	md380_print_config,
+	md380_verify_config,
+	md380_parse_parameter,
+	md380_parse_header,
+	md380_parse_row,
+	md380_update_timestamp,
 };
 
 //
 // Radtel RT-27D
 //
 radio_device_t radio_rt27d = {
-    "Radtel RT-27D",
-    md380_download,
-    md380_upload,
-    md380_is_compatible,
-    md380_read_image,
-    md380_save_image,
-    md380_print_version,
-    md380_print_config,
-    md380_verify_config,
-    md380_parse_parameter,
-    md380_parse_header,
-    md380_parse_row,
-    md380_update_timestamp,
+	"Radtel RT-27D",
+	md380_download,
+	md380_upload,
+	md380_is_compatible,
+	md380_read_image,
+	md380_save_image,
+	md380_print_version,
+	md380_print_config,
+	md380_verify_config,
+	md380_parse_parameter,
+	md380_parse_header,
+	md380_parse_row,
+	md380_update_timestamp,
 };
+

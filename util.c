@@ -33,69 +33,67 @@
 #include <fcntl.h>
 #include <time.h>
 #ifdef MINGW32
-#   include <windows.h>
+#include <windows.h>
 #else
-#   include <sys/stat.h>
+#include <sys/stat.h>
 #endif
 #include "util.h"
 
 //
 // CTCSS tones, Hz*10.
 //
-#define NCTCSS  50
+#define NCTCSS 50
 
 static const int CTCSS_TONES [NCTCSS] = {
-     670,  693,  719,  744,  770,  797,  825,  854,  885,  915,
-     948,  974, 1000, 1035, 1072, 1109, 1148, 1188, 1230, 1273,
-    1318, 1365, 1413, 1462, 1514, 1567, 1598, 1622, 1655, 1679,
-    1713, 1738, 1773, 1799, 1835, 1862, 1899, 1928, 1966, 1995,
-    2035, 2065, 2107, 2181, 2257, 2291, 2336, 2418, 2503, 2541,
+	670,  693,  719,  744,  770,  797,  825,  854,  885,  915,
+	948,  974, 1000, 1035, 1072, 1109, 1148, 1188, 1230, 1273,
+	1318, 1365, 1413, 1462, 1514, 1567, 1598, 1622, 1655, 1679,
+	1713, 1738, 1773, 1799, 1835, 1862, 1899, 1928, 1966, 1995,
+	2035, 2065, 2107, 2181, 2257, 2291, 2336, 2418, 2503, 2541,
 };
 
 //
 // DCS codes.
 //
-#define NDCS    (104+1)
+#define NDCS (104 + 1)
 
 static const int DCS_CODES[NDCS] = {
-     23,  25,  26,  31,  32,  36,  43,  47,  51,  53,
-     54,  65,  71,  72,  73,  74, 114, 115, 116, 122,
-    125, 131, 132, 134, 143, 145, 152, 155, 156, 162,
-    165, 172, 174, 205, 212, 223, 225, 226, 243, 244,
-    245, 246, 251, 252, 255, 261, 263, 265, 266, 271,
-    274, 306, 311, 315, 325, 331, 332, 343, 346, 351,
-    356, 364, 365, 371, 411, 412, 413, 423, 431, 432,
-    445, 446, 452, 454, 455, 462, 464, 465, 466, 503,
-    506, 516, 523, 526, 532, 546, 565, 606, 612, 624,
-    627, 631, 632, 654, 662, 664, 703, 712, 723, 731,
-    732, 734, 743, 754,
-     17, // For RD-5R
+	23,  25,  26,  31,  32,  36,  43,  47,  51,  53,
+	54,  65,  71,  72,  73,  74, 114, 115, 116, 122,
+	125, 131, 132, 134, 143, 145, 152, 155, 156, 162,
+	165, 172, 174, 205, 212, 223, 225, 226, 243, 244,
+	245, 246, 251, 252, 255, 261, 263, 265, 266, 271,
+	274, 306, 311, 315, 325, 331, 332, 343, 346, 351,
+	356, 364, 365, 371, 411, 412, 413, 423, 431, 432,
+	445, 446, 452, 454, 455, 462, 464, 465, 466, 503,
+	506, 516, 523, 526, 532, 546, 565, 606, 612, 624,
+	627, 631, 632, 654, 662, 664, 703, 712, 723, 731,
+	732, 734, 743, 754,
+	17, // For RD-5R
 };
 
 //
 // Check for a regular file.
 //
-int is_file(char *filename)
-{
+int is_file(char *filename) {
 #ifdef MINGW32
-    // Treat COM* as a device.
-    return strncasecmp(filename, "com", 3) != 0;
+	// Treat COM* as a device.
+	return strncasecmp(filename, "com", 3) != 0;
 #else
-    struct stat st;
+	struct stat st;
 
-    if (stat(filename, &st) < 0) {
-        // File not exist: treat it as a regular file.
-        return 1;
-    }
-    return (st.st_mode & S_IFMT) == S_IFREG;
+	if (stat(filename, &st) < 0) {
+		// File not exist: treat it as a regular file.
+		return 1;
+	}
+	return (st.st_mode & S_IFMT) == S_IFREG;
 #endif
 }
 
 //
 // Print data in hex format.
 //
-void print_hex(const unsigned char *data, int len)
-{
+void print_hex(const unsigned char *data, int len) {
     int i;
 
     printf("%02x", (unsigned char) data[0]);

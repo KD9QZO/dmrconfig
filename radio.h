@@ -97,21 +97,21 @@ int radio_is_compatible(const char *ident);
 //
 typedef struct _radio_device_t radio_device_t;
 struct _radio_device_t {
-    const char *name;
-    void (*download)(radio_device_t *radio);
-    void (*upload)(radio_device_t *radio, int cont_flag);
-    int (*is_compatible)(radio_device_t *radio);
-    void (*read_image)(radio_device_t *radio, FILE *img);
-    void (*save_image)(radio_device_t *radio, FILE *img);
-    void (*print_version)(radio_device_t *radio, FILE *out);
-    void (*print_config)(radio_device_t *radio, FILE *out, int verbose);
-    int (*verify_config)(radio_device_t *radio);
-    void (*parse_parameter)(radio_device_t *radio, char *param, char *value);
-    int (*parse_header)(radio_device_t *radio, char *line);
-    int (*parse_row)(radio_device_t *radio, int table_id, int first_row, char *line);
-    void (*update_timestamp)(radio_device_t *radio);
-    void (*write_csv)(radio_device_t *radio, FILE *csv);
-    int channel_count;
+	const char *name;
+	void (*download)(radio_device_t *radio);
+	void (*upload)(radio_device_t *radio, int cont_flag);
+	int (*is_compatible)(radio_device_t *radio);
+	void (*read_image)(radio_device_t *radio, FILE *img);
+	void (*save_image)(radio_device_t *radio, FILE *img);
+	void (*print_version)(radio_device_t *radio, FILE *out);
+	void (*print_config)(radio_device_t *radio, FILE *out, int verbose);
+	int (*verify_config)(radio_device_t *radio);
+	void (*parse_parameter)(radio_device_t *radio, char *param, char *value);
+	int (*parse_header)(radio_device_t *radio, char *line);
+	int (*parse_row)(radio_device_t *radio, int table_id, int first_row, char *line);
+	void (*update_timestamp)(radio_device_t *radio);
+	void (*write_csv)(radio_device_t *radio, FILE *csv);
+	int channel_count;
 };
 
 extern radio_device_t radio_md380;      // TYT MD-380

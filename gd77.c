@@ -345,65 +345,62 @@ static void gd77_print_version(radio_device_t *radio, FILE *out)
 //
 // Read memory image from the device.
 //
-static void download(radio_device_t *radio)
-{
-    int bno;
+static void download(radio_device_t *radio) {
+	int bno;
 
-    // Read range 0x80...0x1e29f.
-    for (bno=1; bno<966; bno++) {
-        if (bno >= 248 && bno < 256) {
-            // Skip range 0x7c00...0x8000.
-            continue;
-        }
-        hid_read_block(bno, &radio_mem[bno*128], 128);
+	// Read range 0x80...0x1e29f.
+	for (bno=1; bno<966; bno++) {
+		if (bno >= 248 && bno < 256) {
+			// Skip range 0x7c00...0x8000.
+			continue;
+		}
+		hid_read_block(bno, &radio_mem[bno*128], 128);
 
-        ++radio_progress;
-        if (radio_progress % 32 == 0) {
-            fprintf(stderr, "#");
-            fflush(stderr);
-        }
-    }
-    //hid_read_finish();
+		++radio_progress;
+		if (radio_progress % 32 == 0) {
+			fprintf(stderr, "#");
+			fflush(stderr);
+		}
+	}
+	//hid_read_finish();
 
-    // Clear header and footer.
-    memset(&radio_mem[0], 0xff, 128);
-    memset(&radio_mem[966*128], 0xff, MEMSZ - 966*128);
-    memset(&radio_mem[248*128], 0xff, 8*128);
+	// Clear header and footer.
+	memset(&radio_mem[0], 0xff, 128);
+	memset(&radio_mem[966*128], 0xff, MEMSZ - 966*128);
+	memset(&radio_mem[248*128], 0xff, 8*128);
 }
 
 //
 // Radioddity GD-77 new firmware: read memory image.
 //
-static void gd77_download(radio_device_t *radio)
-{
-    download(radio);
+static void gd77_download(radio_device_t *radio) {
+	download(radio);
 
-    // Add header.
-    memcpy(&radio_mem[0], "MD-760P", 7);
+	// Add header.
+	memcpy(&radio_mem[0], "MD-760P", 7);
 }
 
 //
 // Write memory image to the device.
 //
-static void gd77_upload(radio_device_t *radio, int cont_flag)
-{
-    int bno;
+static void gd77_upload(radio_device_t *radio, int cont_flag) {
+	int bno;
 
-    // Write range 0x80...0x1e29f.
-    for (bno=1; bno<966; bno++) {
-        if (bno >= 248 && bno < 256) {
-            // Skip range 0x7c00...0x8000.
-            continue;
-        }
-        hid_write_block(bno, &radio_mem[bno*128], 128);
+	// Write range 0x80...0x1e29f.
+	for (bno=1; bno<966; bno++) {
+		if (bno >= 248 && bno < 256) {
+			// Skip range 0x7c00...0x8000.
+			continue;
+		}
+		hid_write_block(bno, &radio_mem[bno*128], 128);
 
-        ++radio_progress;
-        if (radio_progress % 32 == 0) {
-            fprintf(stderr, "#");
-            fflush(stderr);
-        }
-    }
-    hid_write_finish();
+		++radio_progress;
+		if (radio_progress % 32 == 0) {
+			fprintf(stderr, "#");
+			fflush(stderr);
+		}
+	}
+	hid_write_finish();
 }
 
 //
@@ -1114,16 +1111,15 @@ static void print_analog_channels(FILE *out, int verbose)
     }
 }
 
-static int have_zones()
-{
-    zonetab_t *zt = GET_ZONETAB();
-    int i;
+static int have_zones() {
+	zonetab_t *zt = GET_ZONETAB();
+	int i;
 
-    for (i=0; i<32; i++) {
-        if (zt->bitmap[i])
-            return 1;
-    }
-    return 0;
+	for (i = 0; i < 32; i++) {
+		if (zt->bitmap[i])
+			return 1;
+	}
+	return 0;
 }
 
 static int have_scanlists()
@@ -1163,158 +1159,154 @@ static int have_grouplists()
     return 0;
 }
 
-static int have_messages()
-{
-    msgtab_t *mt = GET_MSGTAB();
+static int have_messages() {
+	msgtab_t *mt = GET_MSGTAB();
 
-    return mt->count > 0;
+	return mt->count > 0;
 }
 
 //
 // Print full information about the device configuration.
 //
-static void gd77_print_config(radio_device_t *radio, FILE *out, int verbose)
-{
-    int i;
+static void gd77_print_config(radio_device_t *radio, FILE *out, int verbose) {
+	int i;
 
-    fprintf(out, "Radio: %s\n", radio->name);
-    if (verbose)
-        gd77_print_version(radio, out);
+	fprintf(out, "Radio: %s\n", radio->name);
+	if (verbose)
+		gd77_print_version(radio, out);
 
-    //
-    // Channels.
-    //
-    if (have_channels(MODE_DIGITAL)) {
-        fprintf(out, "\n");
-        print_digital_channels(out, verbose);
-    }
-    if (have_channels(MODE_ANALOG)) {
-        fprintf(out, "\n");
-        print_analog_channels(out, verbose);
-    }
+	//
+	// Channels.
+	//
+	if (have_channels(MODE_DIGITAL)) {
+		fprintf(out, "\n");
+		print_digital_channels(out, verbose);
+	}
+	if (have_channels(MODE_ANALOG)) {
+		fprintf(out, "\n");
+		print_analog_channels(out, verbose);
+	}
 
-    //
-    // Zones.
-    //
-    if (have_zones()) {
-        fprintf(out, "\n");
-        if (verbose) {
-            fprintf(out, "# Table of channel zones.\n");
-            fprintf(out, "# 1) Zone number: 1-%d\n", NZONES);
-            fprintf(out, "# 2) Name: up to 16 characters, use '_' instead of space\n");
-            fprintf(out, "# 3) List of channels: numbers and ranges (N-M) separated by comma\n");
-            fprintf(out, "#\n");
-        }
-        fprintf(out, "Zone    Name             Channels\n");
-        for (i=0; i<NZONES; i++) {
-            zone_t *z = get_zone(i);
+	//
+	// Zones.
+	//
+	if (have_zones()) {
+		fprintf(out, "\n");
+		if (verbose) {
+			fprintf(out, "# Table of channel zones.\n");
+			fprintf(out, "# 1) Zone number: 1-%d\n", NZONES);
+			fprintf(out, "# 2) Name: up to 16 characters, use '_' instead of space\n");
+			fprintf(out, "# 3) List of channels: numbers and ranges (N-M) separated by comma\n");
+			fprintf(out, "#\n");
+		}
+		fprintf(out, "Zone    Name             Channels\n");
+		for (i=0; i<NZONES; i++) {
+			zone_t *z = get_zone(i);
 
-            if (!z) {
-                // Zone is disabled.
-                continue;
-            }
-            fprintf(out, "%4d    ", i + 1);
-            print_ascii(out, z->name, 16, 1);
-            fprintf(out, " ");
-            if (z->member[0]) {
-                print_chanlist(out, z->member, 16, 0);
-            } else {
-                fprintf(out, "-");
-            }
-            fprintf(out, "\n");
-        }
-    }
+			if (!z) {
+				// Zone is disabled.
+				continue;
+			}
+			fprintf(out, "%4d    ", i + 1);
+			print_ascii(out, z->name, 16, 1);
+			fprintf(out, " ");
+			if (z->member[0]) {
+				print_chanlist(out, z->member, 16, 0);
+			} else {
+				fprintf(out, "-");
+			}
+			fprintf(out, "\n");
+		}
+	}
 
-    //
-    // Scan lists.
-    //
-    if (have_scanlists()) {
-        fprintf(out, "\n");
-        if (verbose) {
-            fprintf(out, "# Table of scan lists.\n");
-            fprintf(out, "# 1) Scan list number: 1-%d\n", NSCANL);
-            fprintf(out, "# 2) Name: up to 16 characters, use '_' instead of space\n");
-            fprintf(out, "# 3) Priority channel 1 (50%% of scans): -, Sel or index\n");
-            fprintf(out, "# 4) Priority channel 2 (25%% of scans): -, Sel or index\n");
-            fprintf(out, "# 5) Designated transmit channel: Last, Sel or index\n");
-            fprintf(out, "# 6) List of channels: numbers and ranges (N-M) separated by comma\n");
-            fprintf(out, "#\n");
-        }
-        fprintf(out, "Scanlist Name            PCh1 PCh2 TxCh ");
+	//
+	// Scan lists.
+	//
+	if (have_scanlists()) {
+		fprintf(out, "\n");
+		if (verbose) {
+			fprintf(out, "# Table of scan lists.\n");
+			fprintf(out, "# 1) Scan list number: 1-%d\n", NSCANL);
+			fprintf(out, "# 2) Name: up to 16 characters, use '_' instead of space\n");
+			fprintf(out, "# 3) Priority channel 1 (50%% of scans): -, Sel or index\n");
+			fprintf(out, "# 4) Priority channel 2 (25%% of scans): -, Sel or index\n");
+			fprintf(out, "# 5) Designated transmit channel: Last, Sel or index\n");
+			fprintf(out, "# 6) List of channels: numbers and ranges (N-M) separated by comma\n");
+			fprintf(out, "#\n");
+		}
+		fprintf(out, "Scanlist Name            PCh1 PCh2 TxCh ");
 #ifdef PRINT_RARE_PARAMS
-        fprintf(out, "Hold Smpl ");
+		fprintf(out, "Hold Smpl ");
 #endif
-        fprintf(out, "Channels\n");
-        for (i=0; i<NSCANL; i++) {
-            scanlist_t *sl = get_scanlist(i);
+		fprintf(out, "Channels\n");
+		for (i=0; i<NSCANL; i++) {
+			scanlist_t *sl = get_scanlist(i);
 
-            if (!sl) {
-                // Scan list is disabled.
-                continue;
-            }
-            fprintf(out, "%5d    ", i + 1);
-            print_ascii(out, sl->name, 15, 1);
-            if (sl->priority_ch1 == 0) {
-                fprintf(out, " -    ");
-            } else if (sl->priority_ch1 == 1) {
-                fprintf(out, " Sel  ");
-            } else {
-                fprintf(out, " %-4d ", sl->priority_ch1 - 1);
-            }
-            if (sl->priority_ch2 == 0) {
-                fprintf(out, "-    ");
-            } else if (sl->priority_ch2 == 1) {
-                fprintf(out, "Sel  ");
-            } else {
-                fprintf(out, "%-4d ", sl->priority_ch2 - 1);
-            }
-            if (sl->tx_designated_ch == 0) {
-                fprintf(out, "Last ");
-            } else if (sl->tx_designated_ch == 1) {
-                fprintf(out, "Sel  ");
-            } else {
-                fprintf(out, "%-4d ", sl->tx_designated_ch - 1);
-            }
+			if (!sl) {
+				// Scan list is disabled.
+				continue;
+			}
+			fprintf(out, "%5d    ", i + 1);
+			print_ascii(out, sl->name, 15, 1);
+			if (sl->priority_ch1 == 0) {
+				fprintf(out, " -    ");
+			} else if (sl->priority_ch1 == 1) {
+				fprintf(out, " Sel  ");
+			} else {
+				fprintf(out, " %-4d ", sl->priority_ch1 - 1);
+			}
+			if (sl->priority_ch2 == 0) {
+				fprintf(out, "-    ");
+			} else if (sl->priority_ch2 == 1) {
+				fprintf(out, "Sel  ");
+			} else {
+				fprintf(out, "%-4d ", sl->priority_ch2 - 1);
+			}
+			if (sl->tx_designated_ch == 0) {
+				fprintf(out, "Last ");
+			} else if (sl->tx_designated_ch == 1) {
+				fprintf(out, "Sel  ");
+			} else {
+				fprintf(out, "%-4d ", sl->tx_designated_ch - 1);
+			}
 #ifdef PRINT_RARE_PARAMS
-            fprintf(out, "%-4d %-4d ",
-                sl->sign_hold_time * 25, sl->prio_sample_time * 250);
+			fprintf(out, "%-4d %-4d ", sl->sign_hold_time * 25, sl->prio_sample_time * 250);
 #endif
-            if (sl->member[1]) {
-                print_chanlist(out, sl->member + 1, 31, 1);
-            } else {
-                fprintf(out, "Sel");
-            }
-            fprintf(out, "\n");
-        }
-    }
+			if (sl->member[1]) {
+				print_chanlist(out, sl->member + 1, 31, 1);
+			} else {
+				fprintf(out, "Sel");
+			}
+			fprintf(out, "\n");
+		}
+	}
 
-    //
-    // Contacts.
-    //
-    if (have_contacts()) {
-        fprintf(out, "\n");
-        if (verbose) {
-            fprintf(out, "# Table of contacts.\n");
-            fprintf(out, "# 1) Contact number: 1-%d\n", NCONTACTS);
-            fprintf(out, "# 2) Name: up to 16 characters, use '_' instead of space\n");
-            fprintf(out, "# 3) Call type: Group, Private, All\n");
-            fprintf(out, "# 4) Call ID: 1...16777215\n");
-            fprintf(out, "# 5) Call receive tone: -, +\n");
-            fprintf(out, "#\n");
-        }
-        fprintf(out, "Contact Name             Type    ID       RxTone\n");
-        for (i=0; i<NCONTACTS; i++) {
-            contact_t *ct = GET_CONTACT(i);
+	//
+	// Contacts.
+	//
+	if (have_contacts()) {
+		fprintf(out, "\n");
+		if (verbose) {
+			fprintf(out, "# Table of contacts.\n");
+			fprintf(out, "# 1) Contact number: 1-%d\n", NCONTACTS);
+			fprintf(out, "# 2) Name: up to 16 characters, use '_' instead of space\n");
+			fprintf(out, "# 3) Call type: Group, Private, All\n");
+			fprintf(out, "# 4) Call ID: 1...16777215\n");
+			fprintf(out, "# 5) Call receive tone: -, +\n");
+			fprintf(out, "#\n");
+		}
+		fprintf(out, "Contact Name             Type    ID       RxTone\n");
+		for (i=0; i<NCONTACTS; i++) {
+			contact_t *ct = GET_CONTACT(i);
 
-            if (!VALID_CONTACT(ct)) {
-                // Contact is disabled
-                continue;
-            }
+			if (!VALID_CONTACT(ct)) {
+				// Contact is disabled
+				continue;
+			}
 
-            fprintf(out, "%5d   ", i+1);
-            print_ascii(out, ct->name, 16, 1);
-            fprintf(out, " %-7s %-8d %s\n",
-                CONTACT_TYPE[ct->type & 3], CONTACT_ID(ct), ct->receive_tone ? "+" : "-");
+			fprintf(out, "%5d   ", i+1);
+			print_ascii(out, ct->name, 16, 1);
+			fprintf(out, " %-7s %-8d %s\n", CONTACT_TYPE[ct->type & 3], CONTACT_ID(ct), ct->receive_tone ? "+" : "-");
         }
     }
 

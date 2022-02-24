@@ -32,33 +32,36 @@
 #include <fcntl.h>
 #include <time.h>
 #include <sys/stat.h>
+
 #include "radio.h"
 #include "util.h"
 
+
+
 static struct {
-    char *ident;
-    radio_device_t *device;
+	char *ident;
+	radio_device_t *device;
 } radio_tab[] = {
-    { "DR780",      &radio_md380 },     // TYT MD-380, Retevis RT3, RT8
-    { "MD390",      &radio_md390 },     // TYT MD-390
-    { "MD-UV380",   &radio_uv380 },     // TYT MD-UV380
-    { "MD-UV390",   &radio_uv390 },     // TYT MD-UV390, Retevis RT3S
-    { "2017",       &radio_md2017 },    // TYT MD-2017, Retevis RT82
-    { "MD9600",     &radio_md9600 },    // TYT MD-9600
-    { "BF-5R",      &radio_rd5r },      // Baofeng RD-5R, TD-5R
-    { "1801",       &radio_dm1801 },    // Baofeng DM-1801
-    { "DM-1701",    &radio_rt84 },      // Baofeng DM-1701, Retevis RT84
-    { "MD-760P",    &radio_gd77 },      // Radioddity GD-77, version 3.1.1 and later
-    { "D868UVE",    &radio_d868uv },    // Anytone AT-D868UV
-    { "D878UV",     &radio_d878uv },    // Anytone AT-D878UV
-    { "D6X2UV",     &radio_dmr6x2 },    // BTECH DMR-6x2
-    { "ZD3688",     &radio_d900 },      // Zastone D900
-    { "TP660",      &radio_dp880 },     // Zastone DP880
-    { "ZN><:",      &radio_rt27d },     // Radtel RT-27D
-    { 0, 0 }
+	{ "DR780",      &radio_md380 },     // TYT MD-380, Retevis RT3, RT8
+	{ "MD390",      &radio_md390 },     // TYT MD-390
+	{ "MD-UV380",   &radio_uv380 },     // TYT MD-UV380
+	{ "MD-UV390",   &radio_uv390 },     // TYT MD-UV390, Retevis RT3S
+	{ "2017",       &radio_md2017 },    // TYT MD-2017, Retevis RT82
+	{ "MD9600",     &radio_md9600 },    // TYT MD-9600
+	{ "BF-5R",      &radio_rd5r },      // Baofeng RD-5R, TD-5R
+	{ "1801",       &radio_dm1801 },    // Baofeng DM-1801
+	{ "DM-1701",    &radio_rt84 },      // Baofeng DM-1701, Retevis RT84
+	{ "MD-760P",    &radio_gd77 },      // Radioddity GD-77, version 3.1.1 and later
+	{ "D868UVE",    &radio_d868uv },    // Anytone AT-D868UV
+	{ "D878UV",     &radio_d878uv },    // Anytone AT-D878UV
+	{ "D6X2UV",     &radio_dmr6x2 },    // BTECH DMR-6x2
+	{ "ZD3688",     &radio_d900 },      // Zastone D900
+	{ "TP660",      &radio_dp880 },     // Zastone DP880
+	{ "ZN><:",      &radio_rt27d },     // Radtel RT-27D
+	{ 0, 0 }
 };
 
-unsigned char radio_mem [1024*1024*2];  // Radio memory contents, up to 2 Mbytes
+unsigned char radio_mem [1024 * 1024 * 2];  // Radio memory contents, up to 2 Mbytes
 int radio_progress;                     // Read/write progress counter
 
 static radio_device_t *device;          // Device-dependent interface
@@ -66,62 +69,64 @@ static radio_device_t *device;          // Device-dependent interface
 //
 // Close the serial port.
 //
-void radio_disconnect()
-{
-    fprintf(stderr, "Close device.\n");
+void radio_disconnect() {
+	fprintf(stderr, "Close device.\n");
 
-    // Restore the normal radio mode.
-    dfu_reboot();
-    dfu_close();
-    hid_close();
-    serial_close();
+	// Restore the normal radio mode.
+	dfu_reboot();
+	dfu_close();
+	hid_close();
+	serial_close();
 }
 
 //
 // Print a generic information about the device.
 //
-void radio_print_version(FILE *out)
-{
-    device->print_version(device, out);
+void radio_print_version(FILE *out) {
+	device->print_version(device, out);
 }
 
 //
 // Connect to the radio and identify the type of device.
 //
-void radio_connect()
-{
-    const char *ident;
-    int i;
+void radio_connect() {
+	const char *ident;
+	int i;
 
-    // Try TYT MD family.
-    ident = dfu_init(0x0483, 0xdf11);
-    if (! ident) {
-        // Try RD-5R, DM-1801 and GD-77.
-        if (hid_init(0x15a2, 0x0073) >= 0)
-            ident = hid_identify();
-    }
-    if (! ident) {
-        // Try AT-D868UV.
-        if (serial_init(0x28e9, 0x018a) >= 0)
-            ident = serial_identify();
-    }
-    if (! ident) {
-        fprintf(stderr, "No radio detected.\n");
-        fprintf(stderr, "Check your USB cable!\n");
-        exit(-1);
-    }
+	// Try TYT MD family.
+	ident = dfu_init(0x0483, 0xDF11);
 
-    for (i=0; radio_tab[i].ident; i++) {
-        if (strcasecmp(ident, radio_tab[i].ident) == 0) {
-            device = radio_tab[i].device;
-            break;
-        }
-    }
-    if (! device) {
-        fprintf(stderr, "Unrecognized radio '%s'.\n", ident);
-        exit(-1);
-    }
-    fprintf(stderr, "Connect to %s.\n", device->name);
+	if (!ident) {
+		// Try RD-5R, DM-1801 and GD-77.
+		if (hid_init(0x15A2, 0x0073) >= 0)
+			ident = hid_identify();
+	}
+
+	if (!ident) {
+		// Try AT-D868UV.
+		if (serial_init(0x28E9, 0x018A) >= 0)
+			ident = serial_identify();
+	}
+
+	if (!ident) {
+		fprintf(stderr, "No radio detected.\n");
+		fprintf(stderr, "Check your USB cable!\n");
+		exit(-1);
+	}
+
+	for (i = 0; radio_tab[i].ident; i++) {
+		if (strcasecmp(ident, radio_tab[i].ident) == 0) {
+			device = radio_tab[i].device;
+			break;
+		}
+	}
+
+	if (!device) {
+		fprintf(stderr, "Unrecognized radio '%s'.\n", ident);
+		exit(-1);
+	}
+
+	fprintf(stderr, "Connect to %s.\n", device->name);
 }
 
 //
